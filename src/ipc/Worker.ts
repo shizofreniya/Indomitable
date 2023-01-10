@@ -63,12 +63,12 @@ export class Worker {
         });
     }
 
-    private handle(data: Serializable): boolean|void {
+    private async handle(data: Serializable): Promise<boolean | void> {
         try {
             if (!(data as any).internal)
                 return this.manager.emit(LibraryEvents.MESSAGE, data);
             if ((data as RawIpcMessage).type === RawIpcMessageType.MESSAGE)
-                return this.message(data as RawIpcMessage);
+                return await this.message(data as RawIpcMessage);
             if ((data as RawIpcMessage).type === RawIpcMessageType.RESPONSE)
                 return this.promise(data as RawIpcMessage);
         } catch (error: unknown) {
@@ -92,7 +92,7 @@ export class Worker {
         promise.resolve(data.content);
     }
 
-    private message(data: RawIpcMessage): boolean|void {
+    private async message(data: RawIpcMessage): Promise<boolean | void> {
         const reply = (content: any) => {
             if (!data.id) return;
             const response: RawIpcMessage = {
@@ -114,7 +114,7 @@ export class Worker {
             const content = message.content as InternalEvents;
             if (content.op === ClientEvents.EVAL)
             // @ts-ignore -- needs to be accessed for broadcastEval
-                message.reply(this.shard.client._eval(content.data));
+                message.reply(await this.shard.client._eval(content.data));
         } catch (error: any) {
             if (!message.repliable) throw error as Error;
             message.reply({
